@@ -585,6 +585,15 @@ body.bg-pattern-sparkles {
     #tools-section {
       margin-top: 1px;
     }
+    #tools-section .section-header-flex {
+      position: relative;
+      z-index: 2;
+      background: var(--sidebar-bg, var(--panel));
+    }
+    #sidebar-tools-list {
+      position: relative;
+      z-index: 1;
+    }
     #tools-section .list-item {
       padding: 8px 8px;
     }
@@ -698,154 +707,40 @@ body.bg-pattern-sparkles {
     .sidebar-tools-list {
       gap: 0;
     }
-    /* Brief hold during pointer-drop sort() only — collapsed so no blank row gap. */
-    #sidebar-tools-list .tool-reorderable.tool-reorder-drag-source:not(.tool-sortable-ghost),
-    #rail-tools-list .tool-reorderable.tool-reorder-drag-source:not(.tool-sortable-ghost) {
-      opacity: 0 !important;
-      height: 0 !important;
-      min-height: 0 !important;
-      padding-top: 0 !important;
-      padding-bottom: 0 !important;
-      margin: 0 !important;
-      overflow: hidden !important;
-      border: none !important;
-      pointer-events: none !important;
-    }
     .sidebar-reorder-enabled .tool-reorderable {
       cursor: grab;
-      /* Override .list-item { touch-action: pan-y } so Sortable can capture drags. */
-      touch-action: none;
       user-select: none;
     }
-    .sidebar-reorder-enabled .tool-reorderable:active {
+    .sidebar-reorder-enabled .tool-reorderable:active,
+    .sidebar-reorder-enabled .tool-reorderable.dragging {
       cursor: grabbing;
     }
     body.sidebar-tool-reorder-dragging,
     body.sidebar-tool-reorder-dragging * {
       cursor: grabbing !important;
     }
-    body.sidebar-tool-reorder-dragging #sidebar-tools-list .tool-reorderable:not(.tool-sortable-ghost),
-    body.sidebar-tool-reorder-dragging #sidebar-tools-list .tool-reorderable:not(.tool-sortable-ghost):hover,
-    body.sidebar-tool-reorder-dragging #sidebar-tools-list .tool-reorderable:not(.tool-sortable-ghost):active,
-    body.sidebar-tool-reorder-dragging #sidebar-tools-list .tool-reorderable:not(.tool-sortable-ghost):focus,
-    body.sidebar-tool-reorder-dragging #sidebar-tools-list .tool-reorderable:not(.tool-sortable-ghost):focus-visible {
-      background: transparent !important;
-      border-color: transparent !important;
-      box-shadow: none !important;
-      outline: none !important;
-    }
-    body.sidebar-tool-reorder-dragging #rail-tools-list .tool-reorderable:not(.tool-sortable-ghost),
-    body.sidebar-tool-reorder-dragging #rail-tools-list .tool-reorderable:not(.tool-sortable-ghost):hover,
-    body.sidebar-tool-reorder-dragging #rail-tools-list .tool-reorderable:not(.tool-sortable-ghost):active,
-    body.sidebar-tool-reorder-dragging #rail-tools-list .tool-reorderable:not(.tool-sortable-ghost):focus,
-    body.sidebar-tool-reorder-dragging #rail-tools-list .tool-reorderable:not(.tool-sortable-ghost):focus-visible {
-      background: transparent !important;
-      border-color: transparent !important;
-      box-shadow: none !important;
-      outline: none !important;
-    }
-    /* Drop slot only — hide duplicated icons/labels (drag mirror shows content). */
-    .tool-sortable-ghost {
-      opacity: 0.42 !important;
-      background: color-mix(in srgb, var(--accent) 12%, transparent) !important;
+    #sidebar-tools-list .drag-placeholder,
+    #rail-tools-list .drag-placeholder {
+      border: 2px dashed color-mix(in srgb, var(--accent) 40%, transparent);
       border-radius: 6px;
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
+      margin: 2px 0;
     }
-    .tool-reorder-is-dragging #sidebar-tools-list .tool-reorderable,
-    .tool-reorder-is-dragging #sidebar-tools-list .tool-reorderable:hover,
-    .tool-reorder-is-dragging #sidebar-tools-list .tool-reorderable:active,
-    .tool-reorder-is-dragging #sidebar-tools-list .tool-reorderable:focus,
-    .tool-reorder-is-dragging #sidebar-tools-list .tool-reorderable:focus-visible,
-    .tool-reorder-is-dragging #sidebar-tools-list .tool-reorderable:focus-within,
-    .tool-reorder-is-dragging #sidebar-tools-list .tool-reorderable.active,
-    .tool-reorder-is-dragging #rail-tools-list .tool-reorderable,
-    .tool-reorder-is-dragging #rail-tools-list .tool-reorderable:hover {
-      background: transparent !important;
-      border-color: transparent !important;
-      box-shadow: none !important;
-      outline: none !important;
-    }
-    .tool-reorder-is-dragging #sidebar-tools-list .tool-reorderable svg,
-    .tool-reorder-is-dragging #sidebar-tools-list .tool-reorderable:hover svg,
-    .tool-sortable-fallback.list-item svg {
-      opacity: 0.5 !important;
-    }
-    .tool-reorder-is-dragging #rail-tools-list .tool-reorderable * {
-      pointer-events: none;
-    }
-    .tool-reorder-is-dragging .tool-sortable-ghost {
+    #sidebar-tools-list .tool-reorderable.dragging,
+    #rail-tools-list .tool-reorderable.dragging {
       opacity: 1 !important;
-      background: color-mix(in srgb, var(--accent) 12%, transparent) !important;
-    }
-    .tool-reorder-is-dragging #rail-tools-list .tool-sortable-ghost {
-      opacity: 0 !important;
-      background: transparent !important;
-      pointer-events: none !important;
-    }
-    .tool-reorder-is-dragging .tool-sortable-ghost * {
-      visibility: hidden;
-    }
-    /* Collapse stale chosen slot if Sortable leaves it behind the ghost row. */
-    .tool-reorder-is-dragging #sidebar-tools-list > .tool-reorderable.tool-sortable-chosen:not(.tool-sortable-ghost),
-    .tool-reorder-is-dragging #rail-tools-list > .tool-reorderable.tool-sortable-chosen:not(.tool-sortable-ghost) {
-      opacity: 0 !important;
-      height: 0 !important;
-      min-height: 0 !important;
-      padding-top: 0 !important;
-      padding-bottom: 0 !important;
-      margin: 0 !important;
-      overflow: hidden !important;
-      border: none !important;
-      pointer-events: none !important;
-    }
-    .tool-reorder-is-dragging #sidebar-tools-list > .tool-reorderable:not(.tool-sortable-chosen):not(.tool-sortable-ghost) {
-      opacity: 1 !important;
-      visibility: visible !important;
-    }
-    /* Rail: never override resting opacity (0.5 default, per-icon svg tweaks, active-section). */
-    .tool-reorder-is-dragging #rail-tools-list > .tool-reorderable:not(.tool-sortable-chosen):not(.tool-sortable-ghost) {
-      visibility: visible !important;
-    }
-    .tool-reorder-is-dragging .tool-reorderable:focus-visible {
-      box-shadow: none !important;
-      border-color: transparent !important;
-    }
-    /* Drag mirror (forceFallback, appended to body) — fully opaque preview. */
-    .tool-sortable-fallback {
-      opacity: 1 !important;
-      visibility: visible !important;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
       background: var(--panel, var(--sidebar-bg)) !important;
       border-radius: 4px;
-      pointer-events: none;
       z-index: 10000;
     }
-    /* Icon rail: dragged mirror uses the same lit-up hover appearance. */
-    .tool-sortable-fallback.icon-rail-btn {
-      opacity: 1 !important;
-      box-shadow: none !important;
+    #rail-tools-list .tool-reorderable.dragging.icon-rail-btn {
       background: color-mix(in srgb, var(--accent) 12%, transparent) !important;
     }
-    .tool-sortable-fallback.icon-rail-btn.active-section {
-      opacity: 1 !important;
-      background: color-mix(in srgb, var(--color-accent) 15%, transparent) !important;
-    }
-    /* Rail: lock every icon to its resting opacity — hover must not brighten during drag. */
-    body.sidebar-tool-reorder-dragging #rail-tools-list .icon-rail-btn:not(.tool-sortable-fallback):not(.active-section),
-    body.sidebar-tool-reorder-dragging #rail-tools-list .icon-rail-btn:not(.tool-sortable-fallback):not(.active-section):hover,
-    body.sidebar-tool-reorder-dragging #rail-tools-list .icon-rail-btn:not(.tool-sortable-fallback):not(.active-section):active,
-    body.sidebar-tool-reorder-dragging #rail-tools-list .icon-rail-btn:not(.tool-sortable-fallback):not(.active-section):focus {
+    body.sidebar-tool-reorder-dragging #rail-tools-list .icon-rail-btn:not(.dragging):not(.active-section),
+    body.sidebar-tool-reorder-dragging #rail-tools-list .icon-rail-btn:not(.dragging):not(.active-section):hover {
       opacity: 0.5 !important;
       background: transparent !important;
-    }
-    body.sidebar-tool-reorder-dragging #rail-tools-list .icon-rail-btn:not(.tool-sortable-fallback).active-section,
-    body.sidebar-tool-reorder-dragging #rail-tools-list .icon-rail-btn:not(.tool-sortable-fallback).active-section:hover,
-    body.sidebar-tool-reorder-dragging #rail-tools-list .icon-rail-btn:not(.tool-sortable-fallback).active-section:active,
-    body.sidebar-tool-reorder-dragging #rail-tools-list .icon-rail-btn:not(.tool-sortable-fallback).active-section:focus {
-      opacity: 1 !important;
-      background: color-mix(in srgb, var(--color-accent) 15%, transparent) !important;
-    }
-    .tool-sortable-fallback * {
-      visibility: visible !important;
     }
     .icon-rail-btn {
       position: relative;

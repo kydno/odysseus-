@@ -29,8 +29,11 @@ export function enable(containerId, itemSelector, options = {}) {
 
   const config = {
     onReorder: options.onReorder || null,
+    onDragStart: options.onDragStart || null,
+    onDragEnd: options.onDragEnd || null,
     handleSelector: options.handleSelector || null,
     excludeSelector: options.excludeSelector || null,
+    ignoreSelector: options.ignoreSelector || null,
     storageKey: options.storageKey || null,
   };
 
@@ -75,6 +78,7 @@ export function enable(containerId, itemSelector, options = {}) {
     item.parentNode.insertBefore(placeholder, item);
 
     item.classList.add('dragging');
+    if (config.onDragStart) config.onDragStart(item);
     Object.assign(item.style, {
       position: 'absolute',
       width: rect.width + 'px',
@@ -146,6 +150,7 @@ export function enable(containerId, itemSelector, options = {}) {
       if (config.onReorder) {
         config.onReorder(getItems());
       }
+      if (config.onDragEnd) config.onDragEnd();
 
       draggedEl = null;
       placeholder = null;
@@ -157,6 +162,7 @@ export function enable(containerId, itemSelector, options = {}) {
 
   function onMouseDown(e) {
     if (e.button !== 0) return;
+    if (config.ignoreSelector && e.target.closest(config.ignoreSelector)) return;
     if (config.handleSelector && !e.target.closest(config.handleSelector)) return;
     const item = e.target.closest(itemSelector);
     if (!item || !container.contains(item)) return;
@@ -186,6 +192,7 @@ export function enable(containerId, itemSelector, options = {}) {
   function onTouchStart(e) {
     // Don't start on buttons/inputs.
     if (e.target.closest('button, input, select, a')) return;
+    if (config.ignoreSelector && e.target.closest(config.ignoreSelector)) return;
     // Respect handleSelector on touch too — long-press anywhere was
     // unintentionally letting users start a reorder from the whole row.
     if (config.handleSelector && !e.target.closest(config.handleSelector)) return;
@@ -262,4 +269,6 @@ export function enable(containerId, itemSelector, options = {}) {
 
 const dragSortModule = { enable };
 export default dragSortModule;
-window.dragSortModule = dragSortModule;
+if (typeof window !== 'undefined') {
+  window.dragSortModule = dragSortModule;
+}
