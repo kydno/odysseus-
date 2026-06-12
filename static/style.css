@@ -585,6 +585,16 @@ body.bg-pattern-sparkles {
     #tools-section {
       margin-top: 1px;
     }
+    /* Keep Tools header above the drag mirror during reorder (replaces JS clamp). */
+    #tools-section .section-header-flex {
+      position: relative;
+      z-index: 2;
+      background: var(--sidebar-bg, var(--panel));
+    }
+    #sidebar-tools-list {
+      position: relative;
+      z-index: 1;
+    }
     #tools-section .list-item {
       padding: 8px 8px;
     }
@@ -697,19 +707,6 @@ body.bg-pattern-sparkles {
     }
     .sidebar-tools-list {
       gap: 0;
-    }
-    /* Brief hold during pointer-drop sort() only — collapsed so no blank row gap. */
-    #sidebar-tools-list .tool-reorderable.tool-reorder-drag-source:not(.tool-sortable-ghost),
-    #rail-tools-list .tool-reorderable.tool-reorder-drag-source:not(.tool-sortable-ghost) {
-      opacity: 0 !important;
-      height: 0 !important;
-      min-height: 0 !important;
-      padding-top: 0 !important;
-      padding-bottom: 0 !important;
-      margin: 0 !important;
-      overflow: hidden !important;
-      border: none !important;
-      pointer-events: none !important;
     }
     .sidebar-reorder-enabled .tool-reorderable {
       cursor: grab;
