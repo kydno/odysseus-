@@ -4792,7 +4792,7 @@ async function initUnifiedIntegrations() {
           if (envOptional) envOptional.style.display = 'inline';
           if (envHint) {
             envHint.style.display = 'block';
-            envHint.textContent = 'Optional. Leave empty for OAuth-based servers (Odysseus will open a browser sign-in). For GitHub, paste a PAT with repo scope.';
+            envHint.textContent = 'Leave empty for OAuth-based servers (Odysseus will open a browser sign-in).';
           }
         } else {
           if (envOptional) envOptional.style.display = 'none';
