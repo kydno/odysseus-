@@ -4761,22 +4761,46 @@ async function initUnifiedIntegrations() {
             <div id="uf-mcp-stdio-fields" style="display:flex;flex-direction:column;gap:6px;">
               <div class="settings-row"><label class="settings-label">Command</label><input id="uf-mcp-cmd" class="settings-input" placeholder="npx"></div>
               <div class="settings-row"><label class="settings-label">Args</label><input id="uf-mcp-args" class="settings-input" placeholder='["-y", "@modelcontextprotocol/server-filesystem"]'></div>
-              <div class="settings-row"><label class="settings-label">Env</label><input id="uf-mcp-env" class="settings-input" placeholder='{"KEY": "value"}'></div>
             </div>
             <div id="uf-mcp-sse-fields" style="display:none;flex-direction:column;gap:6px;">
               <div class="settings-row"><label class="settings-label">URL</label><input id="uf-mcp-url" class="settings-input" placeholder="http://localhost:3001/sse"></div>
             </div>
+            <div id="uf-mcp-env-fields" style="display:flex;flex-direction:column;gap:6px;">
+              <div class="settings-row"><label class="settings-label">Env <span id="uf-mcp-env-optional" style="display:none;opacity:0.5;font-weight:normal">(optional)</span></label><input id="uf-mcp-env" class="settings-input" placeholder='{"KEY": "value"}'></div>
+              <p id="uf-mcp-env-hint" style="display:none;font-size:11px;opacity:0.55;margin:0;line-height:1.35"></p>
+            </div>
             <div class="settings-row" style="margin-top:4px"><button class="admin-btn-sm" id="uf-mcp-save">Save</button><button class="admin-btn-sm" id="uf-mcp-cancel" style="opacity:0.7">Cancel</button><span id="uf-mcp-msg" style="font-size:11px"></span></div>
           </div>
         </div>`;
-      el('uf-mcp-transport').addEventListener('change', () => {
+      const _syncMcpEnvFields = () => {
         const v = el('uf-mcp-transport').value;
         const isUrl = (v === 'sse' || v === 'http');
         el('uf-mcp-stdio-fields').style.display = isUrl ? 'none' : 'flex';
         el('uf-mcp-sse-fields').style.display = isUrl ? 'flex' : 'none';
+        el('uf-mcp-env-fields').style.display = (v === 'sse') ? 'none' : 'flex';
         const urlInput = el('uf-mcp-url');
-        if (urlInput) urlInput.placeholder = (v === 'http') ? 'https://mcp.example.com/mcp' : 'http://localhost:3001/sse';
-      });
+        if (urlInput) urlInput.placeholder = (v === 'http') ? 'https://api.githubcopilot.com/mcp/' : 'http://localhost:3001/sse';
+        const envInput = el('uf-mcp-env');
+        const envOptional = el('uf-mcp-env-optional');
+        const envHint = el('uf-mcp-env-hint');
+        if (envInput) {
+          envInput.placeholder = (v === 'http')
+            ? '{"GITHUB_PERSONAL_ACCESS_TOKEN": "github_pat_..."}'
+            : '{"KEY": "value"}';
+        }
+        if (v === 'http') {
+          if (envOptional) envOptional.style.display = 'inline';
+          if (envHint) {
+            envHint.style.display = 'block';
+            envHint.textContent = 'Optional. Leave empty for OAuth-based servers (Odysseus will open a browser sign-in). For GitHub, paste a PAT with repo scope.';
+          }
+        } else {
+          if (envOptional) envOptional.style.display = 'none';
+          if (envHint) { envHint.style.display = 'none'; envHint.textContent = ''; }
+        }
+      };
+      el('uf-mcp-transport').addEventListener('change', _syncMcpEnvFields);
+      _syncMcpEnvFields();
       el('uf-mcp-cancel').addEventListener('click', () => { formEl.style.display = 'none'; });
       el('uf-mcp-save').addEventListener('click', async () => {
         const transport = el('uf-mcp-transport').value;
@@ -4787,11 +4811,13 @@ async function initUnifiedIntegrations() {
         if (transport === 'stdio') {
           fd.append('command', el('uf-mcp-cmd').value);
           let args = '[]'; try { args = JSON.stringify(JSON.parse(el('uf-mcp-args').value || '[]')); } catch (_) {}
-          let env  = '{}'; try { env  = JSON.stringify(JSON.parse(el('uf-mcp-env').value  || '{}')); } catch (_) {}
           fd.append('args', args);
-          fd.append('env', env);
         } else {
           fd.append('url', el('uf-mcp-url').value);
+        }
+        if (transport === 'stdio' || transport === 'http') {
+          let env  = '{}'; try { env  = JSON.stringify(JSON.parse(el('uf-mcp-env').value  || '{}')); } catch (_) {}
+          fd.append('env', env);
         }
         const saveBtn = el('uf-mcp-save'), cancelBtn = el('uf-mcp-cancel');
         const _origLabel = saveBtn.textContent;
@@ -4805,6 +4831,12 @@ async function initUnifiedIntegrations() {
           } else if (r.ok && (data.connected || data.status === 'connected')) {
             el('uf-mcp-msg').textContent = `Connected (${data.tool_count || 0} tools)`;
             formEl.style.display = 'none'; await renderList();
+          } else if (r.ok && data.status === 'connecting') {
+            el('uf-mcp-msg').textContent = 'Connecting…';
+            formEl.style.display = 'none'; await renderList();
+          } else if (r.ok && data.status === 'error') {
+            el('uf-mcp-msg').textContent = data.error || 'Connection failed';
+            await renderList();
           } else if (r.ok) {
             el('uf-mcp-msg').textContent = 'Saved'; formEl.style.display = 'none'; await renderList();
           } else {
