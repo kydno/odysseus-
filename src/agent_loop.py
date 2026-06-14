@@ -859,7 +859,8 @@ def _build_system_prompt(
         _ov_sig = _hl.sha256(_json.dumps(get_builtin_overrides() or {}, sort_keys=True).encode()).hexdigest()
     except Exception:
         _ov_sig = ""
-    cache_key = (frozenset(disabled_tools or []), bool(mcp_mgr), needs_admin, _rt_key, compact, _ov_sig, owner, suppress_local_context)
+    _mcp_gen = getattr(mcp_mgr, "_generation", 0) if mcp_mgr else 0
+    cache_key = (frozenset(disabled_tools or []), _mcp_gen, needs_admin, _rt_key, compact, _ov_sig, owner, suppress_local_context)
     if _cached_base_prompt and _cached_base_prompt_key == cache_key and not active_document:
         agent_prompt = _cached_base_prompt
         # Skill index is user-editable (name + description), so it must never
