@@ -608,8 +608,6 @@ _API_HOSTS = frozenset([
     # schemas and the agent silently degrades to fenced-block parsing.
     "localhost", "127.0.0.1", "host.docker.internal",
 ])
-_MCP_KEYWORDS = frozenset(["mcp", "browse", "browser", "website", "calendar", "event", "email",
-                           "gmail", "screenshot", "navigate", "click", "miniflux", "rss", "feed"])
 _ADMIN_SCHEMA_NAMES = frozenset([
     "manage_session", "manage_skills", "manage_tasks",
     "manage_endpoints", "manage_mcp", "manage_webhooks", "manage_tokens",
@@ -2145,11 +2143,9 @@ async def stream_agent_loop(
                     s for s in FUNCTION_TOOL_SCHEMAS
                     if s.get("function", {}).get("name") in _relevant_tools
                 ]
-                _mcp_filtered = [
-                    s for s in mcp_schemas
-                    if s.get("function", {}).get("name") in _relevant_tools
-                ]
-                all_tool_schemas = base_schemas + _mcp_filtered
+                # Connected MCP tools are always callable — RAG only selects
+                # built-ins (manage_mcp etc.) and would strip mcp__* schemas.
+                all_tool_schemas = base_schemas + mcp_schemas
             else:
                 base_schemas = FUNCTION_TOOL_SCHEMAS if _needs_admin else [
                     s for s in FUNCTION_TOOL_SCHEMAS
@@ -2163,10 +2159,8 @@ async def stream_agent_loop(
                     and t.get("name") not in disabled_tools
                 ]
         else:
-            # Local: only MCP schemas when message suggests MCP tool usage
-            _last_content = _last_user.lower()
-            _wants_mcp = any(kw in _last_content for kw in _MCP_KEYWORDS)
-            all_tool_schemas = mcp_schemas if (_wants_mcp and mcp_schemas) else []
+            # Local models with tool support: include all connected MCP schemas.
+            all_tool_schemas = mcp_schemas if mcp_schemas else []
         agent_stream_timeout = int(get_setting("agent_stream_timeout_seconds", 300) or 300)
 
         _tool_names_sent = [t.get("function", {}).get("name") for t in (all_tool_schemas or []) if t.get("function")]
