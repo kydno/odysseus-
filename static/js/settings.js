@@ -3553,6 +3553,7 @@ async function initUnifiedIntegrations() {
   const addBtn = el('unified-intg-add-btn');
   if (!listEl) return;
   let integrationNotice = '';
+  let _mcpStatusRefreshTimer = null;
 
   // Hide the "+ Add Integration" button whenever the per-type create form
   // is open so it doesn't compete visually with the in-progress form.
@@ -3692,6 +3693,18 @@ async function initUnifiedIntegrations() {
       listEl.innerHTML = noticeHtml + '<div style="padding:12px;opacity:0.5;font-size:12px;text-align:center">No integrations configured</div>';
     } else {
       listEl.innerHTML = noticeHtml + items.map(renderCard).join('');
+    }
+    // Poll MCP statuses while any enabled server is still connecting/disconnected
+    // so the card updates when a background HTTP connect finishes or fails.
+    clearTimeout(_mcpStatusRefreshTimer);
+    const needsRefresh = items.some(i =>
+      i.type === 'mcp' &&
+      i.enabled !== false &&
+      i.data &&
+      !['connected', 'error', 'needs_oauth'].includes(i.data.status)
+    );
+    if (needsRefresh) {
+      _mcpStatusRefreshTimer = setTimeout(() => renderList(), 2000);
     }
     listEl.querySelector('.intg-open-email-settings')?.addEventListener('click', (e) => {
       e.stopPropagation();
