@@ -5116,18 +5116,19 @@ async function initUnifiedIntegrations() {
         <div class="admin-card" style="margin-top:8px">
           <h2 style="font-size:13px">Add MCP Server</h2>
           <div class="settings-col">
-            <div class="settings-row"><label class="settings-label">Name</label><input id="uf-mcp-name" class="settings-input" placeholder="Server name"></div>
-            <div class="settings-row"><label class="settings-label">Transport</label><select id="uf-mcp-transport" class="settings-input"><option value="stdio">stdio</option><option value="sse">SSE</option><option value="http">Streamable HTTP</option></select></div>
+            <div class="settings-row"><label class="settings-label" style="width:70px;flex-shrink:0">Name</label><input id="uf-mcp-name" class="settings-input" placeholder="Server name"></div>
+            <div class="settings-row"><label class="settings-label" style="width:70px;flex-shrink:0">Transport</label><select id="uf-mcp-transport" class="settings-input"><option value="stdio">stdio</option><option value="sse">SSE</option><option value="http">Streamable HTTP</option></select></div>
             <div id="uf-mcp-stdio-fields" style="display:flex;flex-direction:column;gap:6px;">
-              <div class="settings-row"><label class="settings-label">Command</label><input id="uf-mcp-cmd" class="settings-input" placeholder="npx"></div>
-              <div class="settings-row"><label class="settings-label">Args</label><input id="uf-mcp-args" class="settings-input" placeholder='["-y", "@modelcontextprotocol/server-filesystem"]'></div>
+              <div class="settings-row"><label class="settings-label" style="width:70px;flex-shrink:0">Command</label><input id="uf-mcp-cmd" class="settings-input" placeholder="npx"></div>
+              <div class="settings-row"><label class="settings-label" style="width:70px;flex-shrink:0">Args</label><input id="uf-mcp-args" class="settings-input" placeholder='["-y", "@modelcontextprotocol/server-filesystem"]'></div>
             </div>
             <div id="uf-mcp-sse-fields" style="display:none;flex-direction:column;gap:6px;">
-              <div class="settings-row"><label class="settings-label">URL</label><input id="uf-mcp-url" class="settings-input" placeholder="http://localhost:3001/sse"></div>
+              <div class="settings-row"><label class="settings-label" style="width:70px;flex-shrink:0">URL</label><input id="uf-mcp-url" class="settings-input" placeholder="http://localhost:3001/sse"></div>
             </div>
             <div id="uf-mcp-env-fields" style="display:flex;flex-direction:column;gap:6px;">
-              <div class="settings-row"><label class="settings-label">Env <span id="uf-mcp-env-optional" style="display:none;opacity:0.5;font-weight:normal">(optional)</span></label><input id="uf-mcp-env" class="settings-input" placeholder='{"KEY": "value"}'></div>
+              <div class="settings-row"><label class="settings-label" style="width:70px;flex-shrink:0">Env <span id="uf-mcp-env-optional" style="display:none;font-size:9px;opacity:0.5;font-weight:normal">(optional)</span></label><input id="uf-mcp-env" class="settings-input" placeholder='{"KEY": "value"}'></div>
               <p id="uf-mcp-env-hint" style="display:none;font-size:11px;opacity:0.55;margin:0;line-height:1.35"></p>
+              <p id="uf-mcp-env-formatter" style="display:none;font-size:11px;opacity:0.7;margin:0;line-height:1.35"></p>
             </div>
             <div class="settings-row" style="margin-top:10px;align-items:center;justify-content:flex-end;gap:6px;">
               <span id="uf-mcp-msg" style="font-size:11px;flex:1;margin-right:8px"></span>
@@ -5147,6 +5148,7 @@ async function initUnifiedIntegrations() {
         const envInput = el('uf-mcp-env');
         const envOptional = el('uf-mcp-env-optional');
         const envHint = el('uf-mcp-env-hint');
+        const envFormatter = el('uf-mcp-env-formatter');
         if (envInput) {
           envInput.placeholder = (v === 'http')
             ? '{"API_KEY": "..."}'
@@ -5161,10 +5163,29 @@ async function initUnifiedIntegrations() {
         } else {
           if (envOptional) envOptional.style.display = 'none';
           if (envHint) { envHint.style.display = 'none'; envHint.textContent = ''; }
+          if (envFormatter) { envFormatter.style.display = 'none'; envFormatter.textContent = ''; }
         }
+      };
+      const _showMcpEnvFormatterIfToken = () => {
+        const envInput = el('uf-mcp-env');
+        const envFormatter = el('uf-mcp-env-formatter');
+        if (!envInput || !envFormatter || el('uf-mcp-transport').value !== 'http') return;
+        const raw = envInput.value.trim();
+        const tokenMatch = raw.match(/^github_pat_[A-Za-z0-9_]+$/);
+        if (!tokenMatch) { envFormatter.style.display = 'none'; envFormatter.textContent = ''; return; }
+        envFormatter.style.display = 'block';
+        envFormatter.innerHTML = '<a href="#" id="uf-mcp-format-pat" style="color:var(--accent, var(--red));text-decoration:underline">Format as GitHub PAT</a>';
+        el('uf-mcp-format-pat').addEventListener('click', (e) => {
+          e.preventDefault();
+          envInput.value = JSON.stringify({ GITHUB_PERSONAL_ACCESS_TOKEN: raw });
+          envFormatter.style.display = 'none';
+          envFormatter.textContent = '';
+        });
       };
       el('uf-mcp-transport').addEventListener('change', _syncMcpEnvFields);
       _syncMcpEnvFields();
+      el('uf-mcp-env')?.addEventListener('paste', () => { setTimeout(_showMcpEnvFormatterIfToken, 0); });
+      el('uf-mcp-env')?.addEventListener('input', _showMcpEnvFormatterIfToken);
       el('uf-mcp-cancel').addEventListener('click', () => { formEl.style.display = 'none'; });
       el('uf-mcp-save').addEventListener('click', async () => {
         const transport = el('uf-mcp-transport').value;

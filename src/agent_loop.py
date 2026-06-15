@@ -624,6 +624,8 @@ _ADMIN_SCHEMA_NAMES = frozenset([
     "create_session", "list_sessions", "send_to_session", "pipeline",
     "ask_teacher", "list_models", "search_chats",
 ])
+_MCP_KEYWORDS = frozenset(["mcp", "browse", "browser", "website", "calendar", "event", "email",
+                           "gmail", "screenshot", "navigate", "click", "miniflux", "rss", "feed"])
 _TOOL_SELECTION_TIMEOUT_SECONDS = 1.5
 
 
@@ -2308,8 +2310,10 @@ async def stream_agent_loop(
                     and t.get("name") not in disabled_tools
                 ]
         else:
-            # Local models with tool support: include all connected MCP schemas.
-            all_tool_schemas = mcp_schemas if mcp_schemas else []
+            # Local: only MCP schemas when message suggests MCP tool usage
+            _last_content = _last_user.lower()
+            _wants_mcp = any(kw in _last_content for kw in _MCP_KEYWORDS)
+            all_tool_schemas = mcp_schemas if (_wants_mcp and mcp_schemas) else []
         agent_stream_timeout = int(get_setting("agent_stream_timeout_seconds", 300) or 300)
 
         _tool_names_sent = [t.get("function", {}).get("name") for t in (all_tool_schemas or []) if t.get("function")]
