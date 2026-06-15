@@ -3625,7 +3625,7 @@ async function initUnifiedIntegrations() {
     // MCP servers
     const mcpList = Array.isArray(mcpRes) ? mcpRes : (mcpRes.servers || []);
     for (const srv of mcpList) {
-      const statusText = srv.needs_oauth ? 'needs auth' : srv.status === 'connected' ? `${srv.enabled_tool_count}/${srv.tool_count} tools` : srv.status === 'error' ? 'error' : 'disconnected';
+      const statusText = srv.needs_oauth ? 'needs auth' : srv.status === 'connected' ? `${srv.enabled_tool_count}/${srv.tool_count} tools` : srv.status === 'error' ? 'error' : srv.status === 'connecting' ? 'connecting…' : 'disconnected';
       items.push({ type: 'mcp', id: srv.id || srv.name, name: srv.name || 'MCP Server', detail: statusText, enabled: srv.is_enabled !== false, data: srv });
     }
     for (const tok of (Array.isArray(tokenRes) ? tokenRes : [])) {
@@ -3689,12 +3689,13 @@ async function initUnifiedIntegrations() {
         if (e.target.closest('.intg-del-btn')) return;
         const type = card.dataset.intgType;
         const id = card.dataset.intgId;
+        const isAlreadyOpen = card.classList.contains('intg-card-active') && formEl.style.display !== 'none';
         // Toggle a class instead of mutating inline borderColor — the
         // inline border shorthand made the reset unreliable, leaving
         // stale accent borders on previously-clicked cards.
         listEl.querySelectorAll('.intg-card.intg-card-active').forEach(c => c.classList.remove('intg-card-active'));
         card.classList.add('intg-card-active');
-        showForm(type, id);
+        if (!isAlreadyOpen) showForm(type, id);
       });
     });
     // Wire delete
@@ -5048,9 +5049,9 @@ async function initUnifiedIntegrations() {
         const srv = servers.find(s => (s.id || s.name) === editId);
         if (!srv) { formEl.innerHTML = '<div class="admin-card" style="margin-top:8px">Server not found</div>'; return; }
         const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
-        const statusColor = srv.needs_oauth ? '#e5a33a' : srv.status === 'connected' ? 'var(--green,#50fa7b)' : srv.status === 'error' ? 'var(--red)' : 'var(--fg)';
+        const statusColor = srv.needs_oauth ? '#e5a33a' : srv.status === 'connected' ? 'var(--green,#50fa7b)' : srv.status === 'error' ? 'var(--red)' : srv.status === 'connecting' ? '#e5a33a' : 'var(--fg)';
         const toolInfo = srv.status === 'connected' ? `${srv.enabled_tool_count}/${srv.tool_count} tools` : '';
-        const statusText = srv.needs_oauth ? 'Needs authorization' : srv.status === 'connected' ? `Connected (${toolInfo})` : srv.status === 'error' ? `Error: ${esc(srv.error || 'unknown')}` : 'Disconnected';
+        const statusText = srv.needs_oauth ? 'Needs authorization' : srv.status === 'connected' ? `Connected (${toolInfo})` : srv.status === 'error' ? `Error: ${esc(srv.error || 'unknown')}` : srv.status === 'connecting' ? 'Connecting…' : 'Disconnected';
         formEl.innerHTML = `
           <div class="admin-card" style="margin-top:8px">
             <h2 style="font-size:13px">${esc(srv.name)}</h2>
@@ -5142,13 +5143,13 @@ async function initUnifiedIntegrations() {
         el('uf-mcp-sse-fields').style.display = isUrl ? 'flex' : 'none';
         el('uf-mcp-env-fields').style.display = (v === 'sse') ? 'none' : 'flex';
         const urlInput = el('uf-mcp-url');
-        if (urlInput) urlInput.placeholder = (v === 'http') ? 'https://api.githubcopilot.com/mcp/' : 'http://localhost:3001/sse';
+        if (urlInput) urlInput.placeholder = (v === 'http') ? 'https://api.example.com/mcp/' : 'http://localhost:3001/sse';
         const envInput = el('uf-mcp-env');
         const envOptional = el('uf-mcp-env-optional');
         const envHint = el('uf-mcp-env-hint');
         if (envInput) {
           envInput.placeholder = (v === 'http')
-            ? '{"GITHUB_PERSONAL_ACCESS_TOKEN": "github_pat_..."}'
+            ? '{"API_KEY": "..."}'
             : '{"KEY": "value"}';
         }
         if (v === 'http') {

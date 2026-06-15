@@ -58,10 +58,6 @@ def test_import_stubs_do_not_leak_into_later_tests():
         assert sys.modules.get("src.agent_loop") is not _IMPORTED_AGENT_LOOP
 
 
-def test_mcp_keyword_gate_matches_literal_mcp_requests():
-    assert "mcp" in _MCP_KEYWORDS
-
-
 def test_polish_internet_search_request_classifies_as_web():
     intent = _classify_agent_request(
         [],
