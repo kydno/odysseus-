@@ -29,15 +29,26 @@ def test_generic_mcp_connection_error_preserves_original_error():
     assert msg == "boom"
 
 
-def test_http_transport_schedules_background_connect():
+def test_http_transport_with_static_auth_awaits_direct_connect():
+    mgr = McpManager()
+
+    with patch.object(McpManager, "_connect_http", return_value=True) as m:
+        result = asyncio.run(mgr.connect_server(
+            "id1", "n", "http", url="https://x/mcp", env={"GITHUB_TOKEN": "t"},
+        ))
+    assert result is True
+    m.assert_called_once_with("id1", "n", "https://x/mcp", {"GITHUB_TOKEN": "t"})
+
+
+def test_http_transport_without_auth_schedules_background_connect():
     mgr = McpManager()
 
     with patch.object(McpManager, "schedule_http_connect") as m:
         result = asyncio.run(mgr.connect_server(
-            "id1", "n", "http", url="https://x/mcp", env={"GITHUB_TOKEN": "t"},
+            "id1", "n", "http", url="https://x/mcp", env={},
         ))
     assert result is False
-    m.assert_called_once_with("id1", "n", "https://x/mcp", {"GITHUB_TOKEN": "t"})
+    m.assert_called_once_with("id1", "n", "https://x/mcp", {})
 
 
 def test_http_auth_headers_from_github_pat():

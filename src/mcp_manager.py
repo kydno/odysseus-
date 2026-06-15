@@ -223,8 +223,13 @@ class McpManager:
             elif transport == "sse":
                 res = await self._connect_sse(server_id, name, url)
             elif transport == "http":
-                self.schedule_http_connect(server_id, name, url, env or {})
-                res = False
+                # Static auth (PAT / custom headers) can be verified inline;
+                # OAuth flows may need a browser redirect, so keep those async.
+                if _http_auth_headers_from_env(env or {}):
+                    res = await self._connect_http(server_id, name, url, env or {})
+                else:
+                    self.schedule_http_connect(server_id, name, url, env or {})
+                    res = False
             else:
                 logger.error(f"Unknown MCP transport: {transport}")
                 res = False

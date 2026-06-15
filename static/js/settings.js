@@ -5165,8 +5165,8 @@ async function initUnifiedIntegrations() {
             <div id="uf-mcp-env-fields" style="display:flex;flex-direction:column;gap:6px;">
               <div class="settings-row"><label class="settings-label" style="width:70px;flex-shrink:0">Env <span id="uf-mcp-env-optional" style="display:none;font-size:10px;opacity:0.5;font-weight:normal">(optional)</span></label><input id="uf-mcp-env" class="settings-input" placeholder='{"KEY": "value"}'></div>
               <p id="uf-mcp-env-hint" style="display:none;font-size:11px;opacity:0.55;margin:0;line-height:1.35"></p>
-              <div id="uf-mcp-env-formatter" style="display:none;animation:section-domino-in 0.36s cubic-bezier(0.22, 1.61, 0.36, 1) backwards;line-height:1.35;">
-                <button type="button" class="admin-btn-sm" id="uf-mcp-format-pat" style="padding:2px 6px;font-size:10px;margin-top:0">Format as GitHub PAT</button>
+              <div id="uf-mcp-env-formatter" style="display:none;animation:section-domino-in 0.36s cubic-bezier(0.22, 1.61, 0.36, 1) backwards;">
+                <button type="button" class="admin-btn-sm" id="uf-mcp-format-pat" style="margin-top:2px">Format as GitHub PAT</button>
               </div>
             </div>
             <div class="settings-row" style="margin-top:10px;align-items:center;justify-content:flex-end;gap:6px;">
