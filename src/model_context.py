@@ -447,3 +447,10 @@ def estimate_tokens(messages: List[Dict]) -> int:
                 total += 4  # per tool-call overhead (id, type, wrapper)
                 total += estimate_text_tokens(str(name) + args)
     return total
+
+
+def estimate_text_tokens(text: str) -> int:
+    """Rough token estimate for a plain text string (chars * 0.3)."""
+    if not text:
+        return 0
+    return int(len(str(text)) * 0.3)

@@ -22,6 +22,7 @@ from src.chat_helpers import coerce_message_and_session
 from src.endpoint_resolver import normalize_base as _normalize_base, build_chat_url
 from src.session_search import search_session_messages
 from src.prompt_security import untrusted_context_message
+from src.context_refs import validate_refs
 from core.exceptions import SessionNotFoundError
 from src.auth_helpers import effective_user, get_current_user
 from routes.session_routes import _verify_session_owner
@@ -354,6 +355,11 @@ def setup_chat_routes(
         use_research = chat_request.use_research
         time_filter = chat_request.time_filter
         preset_id = chat_request.preset_id
+        context_refs = chat_request.context_refs or []
+        try:
+            context_refs = validate_refs(context_refs)
+        except HTTPException:
+            raise HTTPException(400, "Invalid context_refs")
 
         # Verify the caller owns this session before loading it.
         # Without this, any authenticated user can post into another user's chat.
@@ -402,6 +408,7 @@ def setup_chat_routes(
             time_filter=time_filter,
             webhook_manager=webhook_manager,
             allow_tool_preprocessing=allow_tool_preprocessing,
+            context_refs=context_refs,
         )
 
         # Research injection
@@ -589,6 +596,17 @@ def setup_chat_routes(
                 active_email_ctx.get("subject", ""),
             )
 
+        context_refs = form_data.get("context_refs") or (body or {}).get("context_refs")
+        if isinstance(context_refs, str):
+            try:
+                context_refs = json.loads(context_refs)
+            except json.JSONDecodeError:
+                context_refs = []
+        try:
+            context_refs = validate_refs(context_refs)
+        except HTTPException:
+            raise HTTPException(400, "Invalid context_refs")
+
         try:
             # Attachment-only sends: skip the message-required check when the
             # user has attached one or more files (the attachment IS the action).
@@ -679,6 +697,7 @@ def setup_chat_routes(
             # index would be useless / unwanted noise.
             agent_mode=(chat_mode == "agent"),
             allow_tool_preprocessing=allow_tool_preprocessing,
+            context_refs=context_refs,
         )
 
         _research_flags = {"do": do_research}  # Mutable container for generator scope
