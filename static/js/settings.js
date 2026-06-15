@@ -3625,7 +3625,7 @@ async function initUnifiedIntegrations() {
     // MCP servers
     const mcpList = Array.isArray(mcpRes) ? mcpRes : (mcpRes.servers || []);
     for (const srv of mcpList) {
-      const statusText = srv.needs_oauth ? 'needs auth' : srv.status === 'connected' ? `${srv.enabled_tool_count}/${srv.tool_count} tools` : srv.status === 'error' ? 'error' : srv.status === 'connecting' ? 'connecting…' : 'disconnected';
+      const statusText = srv.needs_oauth ? 'needs auth' : srv.status === 'connected' ? `${srv.enabled_tool_count}/${srv.tool_count} tools` : srv.status === 'error' ? 'error' : 'disconnected';
       items.push({ type: 'mcp', id: srv.id || srv.name, name: srv.name || 'MCP Server', detail: statusText, enabled: srv.is_enabled !== false, data: srv });
     }
     for (const tok of (Array.isArray(tokenRes) ? tokenRes : [])) {
@@ -5049,9 +5049,9 @@ async function initUnifiedIntegrations() {
         const srv = servers.find(s => (s.id || s.name) === editId);
         if (!srv) { formEl.innerHTML = '<div class="admin-card" style="margin-top:8px">Server not found</div>'; return; }
         const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
-        const statusColor = srv.needs_oauth ? '#e5a33a' : srv.status === 'connected' ? 'var(--green,#50fa7b)' : srv.status === 'error' ? 'var(--red)' : srv.status === 'connecting' ? '#e5a33a' : 'var(--fg)';
+        const statusColor = srv.needs_oauth ? '#e5a33a' : srv.status === 'connected' ? 'var(--green,#50fa7b)' : srv.status === 'error' ? 'var(--red)' : 'var(--fg)';
         const toolInfo = srv.status === 'connected' ? `${srv.enabled_tool_count}/${srv.tool_count} tools` : '';
-        const statusText = srv.needs_oauth ? 'Needs authorization' : srv.status === 'connected' ? `Connected (${toolInfo})` : srv.status === 'error' ? `Error: ${esc(srv.error || 'unknown')}` : srv.status === 'connecting' ? 'Connecting…' : 'Disconnected';
+        const statusText = srv.needs_oauth ? 'Needs authorization' : srv.status === 'connected' ? `Connected (${toolInfo})` : srv.status === 'error' ? `Error: ${esc(srv.error || 'unknown')}` : 'Disconnected';
         formEl.innerHTML = `
           <div class="admin-card" style="margin-top:8px">
             <h2 style="font-size:13px">${esc(srv.name)}</h2>
@@ -5126,9 +5126,11 @@ async function initUnifiedIntegrations() {
               <div class="settings-row"><label class="settings-label" style="width:70px;flex-shrink:0">URL</label><input id="uf-mcp-url" class="settings-input" placeholder="http://localhost:3001/sse"></div>
             </div>
             <div id="uf-mcp-env-fields" style="display:flex;flex-direction:column;gap:6px;">
-              <div class="settings-row"><label class="settings-label" style="width:70px;flex-shrink:0">Env <span id="uf-mcp-env-optional" style="display:none;font-size:9px;opacity:0.5;font-weight:normal">(optional)</span></label><input id="uf-mcp-env" class="settings-input" placeholder='{"KEY": "value"}'></div>
+              <div class="settings-row"><label class="settings-label" style="width:70px;flex-shrink:0">Env <span id="uf-mcp-env-optional" style="display:none;font-size:10px;opacity:0.5;font-weight:normal">(optional)</span></label><input id="uf-mcp-env" class="settings-input" placeholder='{"KEY": "value"}'></div>
               <p id="uf-mcp-env-hint" style="display:none;font-size:11px;opacity:0.55;margin:0;line-height:1.35"></p>
-              <p id="uf-mcp-env-formatter" style="display:none;font-size:11px;opacity:0.7;margin:0;line-height:1.35"></p>
+              <div id="uf-mcp-env-formatter" style="display:none;animation:section-domino-in 0.36s cubic-bezier(0.22, 1.61, 0.36, 1) backwards;">
+                <button type="button" class="admin-btn-sm" id="uf-mcp-format-pat" style="margin-top:2px">Format as GitHub PAT</button>
+              </div>
             </div>
             <div class="settings-row" style="margin-top:10px;align-items:center;justify-content:flex-end;gap:6px;">
               <span id="uf-mcp-msg" style="font-size:11px;flex:1;margin-right:8px"></span>
@@ -5160,27 +5162,37 @@ async function initUnifiedIntegrations() {
             envHint.style.display = 'block';
             envHint.textContent = 'Leave empty for OAuth-based servers (Odysseus will open a browser sign-in).';
           }
+          _showMcpEnvFormatterIfToken();
         } else {
           if (envOptional) envOptional.style.display = 'none';
-          if (envHint) { envHint.style.display = 'none'; envHint.textContent = ''; }
-          if (envFormatter) { envFormatter.style.display = 'none'; envFormatter.textContent = ''; }
+          if (envHint) envHint.style.display = 'none';
+          if (envFormatter) envFormatter.style.display = 'none';
         }
       };
       const _showMcpEnvFormatterIfToken = () => {
         const envInput = el('uf-mcp-env');
         const envFormatter = el('uf-mcp-env-formatter');
+        const envHint = el('uf-mcp-env-hint');
         if (!envInput || !envFormatter || el('uf-mcp-transport').value !== 'http') return;
         const raw = envInput.value.trim();
         const tokenMatch = raw.match(/^github_pat_[A-Za-z0-9_]+$/);
-        if (!tokenMatch) { envFormatter.style.display = 'none'; envFormatter.textContent = ''; return; }
-        envFormatter.style.display = 'block';
-        envFormatter.innerHTML = '<a href="#" id="uf-mcp-format-pat" style="color:var(--accent, var(--red));text-decoration:underline">Format as GitHub PAT</a>';
-        el('uf-mcp-format-pat').addEventListener('click', (e) => {
-          e.preventDefault();
-          envInput.value = JSON.stringify({ GITHUB_PERSONAL_ACCESS_TOKEN: raw });
+        if (!tokenMatch) {
           envFormatter.style.display = 'none';
-          envFormatter.textContent = '';
-        });
+          if (envHint) envHint.style.display = 'block';
+          return;
+        }
+        if (envHint) envHint.style.display = 'none';
+        envFormatter.style.display = 'block';
+        const btn = el('uf-mcp-format-pat');
+        if (btn) {
+          const newBtn = btn.cloneNode(true);
+          btn.parentNode.replaceChild(newBtn, btn);
+          newBtn.addEventListener('click', () => {
+            envInput.value = JSON.stringify({ GITHUB_PERSONAL_ACCESS_TOKEN: raw });
+            envFormatter.style.display = 'none';
+            if (envHint) envHint.style.display = 'block';
+          });
+        }
       };
       el('uf-mcp-transport').addEventListener('change', _syncMcpEnvFields);
       _syncMcpEnvFields();
@@ -5215,9 +5227,6 @@ async function initUnifiedIntegrations() {
             _handleMcpAuth(data.id, data.auth_url);
           } else if (r.ok && (data.connected || data.status === 'connected')) {
             el('uf-mcp-msg').textContent = `Connected (${data.tool_count || 0} tools)`;
-            formEl.style.display = 'none'; await renderList();
-          } else if (r.ok && data.status === 'connecting') {
-            el('uf-mcp-msg').textContent = 'Connecting…';
             formEl.style.display = 'none'; await renderList();
           } else if (r.ok && data.status === 'error') {
             el('uf-mcp-msg').textContent = data.error || 'Connection failed';
